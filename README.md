@@ -16,7 +16,7 @@
 
 ## Demo
 
-You can see a live demo [here](#). *(Replace with actual demo link if available.)*
+You can see a live demo [here](reesolsen.github.io/SidekickAI/index.html).
 
 ---
 
