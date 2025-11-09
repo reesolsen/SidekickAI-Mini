@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SidekickAI - Chat & Stock Image</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #6ee7b7, #3b82f6, #a855f7, #f43f5e);
+  background-size: 400% 400%;
+  animation: gradientShift 12s ease infinite;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+header {
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #ffffff22;
+}
+
+header h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 2rem;
+  font-weight: 700;
+  text-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+
+header p {
+  margin-top: 4px;
+  color: #f3f4f6;
+  font-size: 0.95rem;
+}
+
+.logo-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  padding: 5px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease;
+}
+
+.logo-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.logo-container:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.chat-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+}
+
+.message {
+  max-width: 70%;
+  padding: 12px 16px;
+  margin-bottom: 15px;
+  border-radius: 18px;
+  word-wrap: break-word;
+}
+
+.user { background: #4f46e5; color: white; align-self: flex-end; text-align: right; }
+.bot { background: #e2e8f0; color: #334155; align-self: flex-start; }
+
+.input-bar {
+  display: flex;
+  padding: 15px;
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid #ffffff22;
+}
+
+.input-bar input[type="text"] {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 25px;
+  border: 2px solid rgba(255,255,255,0.3);
+  outline: none;
+  font-size: 14px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.input-bar input::placeholder { color: #e5e7eb; }
+
+.input-bar button {
+  margin-left: 10px;
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: none;
+  background: #4f46e5;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-bar button:hover { background: #3730a3; }
+
+.loading {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #fff;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading:nth-child(1) { animation-delay: 0s; }
+.loading:nth-child(2) { animation-delay: 0.2s; }
+.loading:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.image-wrapper img {
+  max-width: 100%;
+  border-radius: 12px;
+  display: block;
+}
+
+.download-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.download-btn:hover {
+  background: rgba(0,0,0,0.9);
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>
+    <span class="logo-container">
+      <img src="/sidekick.png" alt="SidekickAI Logo">
+    </span>
+    SidekickAI
+  </h1>
+  <p>Chat or generate images instantly!</p>
+</header>
+
+<main id="chatContainer" class="chat-container">
+  <div class="message bot">
+    👋 Hello! I'm SidekickAI. Type a message to chat, or type "generate" to create an image.
+  </div>
+</main>
+
+<div class="input-bar">
+  <input type="text" id="messageInput" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
+  <button id="sendButton" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+</div>
+
+<script src="https://apifreellm.com/apifree.min.js"></script>
+<script>
+const chatContainer = document.getElementById('chatContainer');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+
+let conversationHistory = [];
+const CHATBOT_PROMPT = `You are a helpful AI assistant. Friendly, professional, and concise. Refer to previous messages when relevant.`;
+const UNSPLASH_ACCESS_KEY = "pjBl53B3G4vBQ7KlJj7l3fpwfmOV2mow9_WUtcqs4fg";
+
+function addMessage(content, isUser=false) {
+  const msg = document.createElement('div');
+  msg.className = 'message ' + (isUser ? 'user' : 'bot');
+  if (typeof content === 'string') {
+    msg.innerHTML = content;
+  } else {
+    msg.appendChild(content); // allow for custom nodes like images
+  }
+  chatContainer.appendChild(msg);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function showTyping() {
+  addMessage('<span class="loading"></span><span class="loading"></span><span class="loading"></span> Typing...');
+}
+
+function removeTyping() {
+  const msgs = chatContainer.querySelectorAll('.message');
+  const last = msgs[msgs.length -1];
+  if(last && last.textContent.includes('Typing...')) last.remove();
+}
+
+async function findStockImage(prompt) {
+  try {
+    const res = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(prompt)}&client_id=${UNSPLASH_ACCESS_KEY}`);
+    const data = await res.json();
+    return data.urls?.regular;
+  } catch(e) { console.error(e); return null; }
+}
+
+async function sendMessage() {
+  const message = messageInput.value.trim();
+  if(!message) return;
+  addMessage(message, true);
+  messageInput.value = '';
+  messageInput.disabled = true;
+  sendButton.disabled = true;
+
+  showTyping();
+
+  try {
+    if(message.toLowerCase().includes("generate") || message.toLowerCase().includes("draw")) {
+      const imgUrl = await findStockImage(message);
+      removeTyping();
+      if(imgUrl){
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-wrapper';
+        wrapper.innerHTML = `
+          <img src="${imgUrl}" alt="Stock image">
+          <a href="${imgUrl}" download class="download-btn" title="Download Image">
+            <i class="fa-solid fa-download"></i>
+          </a>
+        `;
+        addMessage(wrapper);
+      } else {
+        addMessage("⚠️ Could not find a stock image.");
+      }
+    } else {
+      conversationHistory.push(`User: ${message}`);
+      const contextPrompt = `${CHATBOT_PROMPT}
+
+Conversation History:
+${conversationHistory.slice(-10).join('\n')}
+
+Current User Message: ${message}
+
+Respond naturally considering the context above.`;
+
+      // Timeout wrapper for API call
+      const response = await Promise.race([
+        apifree.chat(contextPrompt),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000))
+      ]);
+
+      removeTyping();
+      addMessage(response);
+      conversationHistory.push(`Assistant: ${response}`);
+    }
+  } catch(e){
+    removeTyping();
+    addMessage(`⚠️ Something went wrong: ${e.message}`);
+    console.error(e);
+  } finally {
+    messageInput.disabled = false;
+    sendButton.disabled = false;
+    messageInput.focus();
+  }
+}
+
+
+function handleKeyPress(event) { if(event.key==='Enter') sendMessage(); }
+
+document.getElementById('messageInput').focus();
+</script>
+</body>
+</html>
