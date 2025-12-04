@@ -16,7 +16,7 @@
 
 ## Demo
 
-You can see a live demo [here](https://reesolsen.github.io/SidekickAI/index.html).
+You can see a live demo [here]([https://reesolsen.github.io/SidekickAI/index.html](https://reesolsen.github.io/SidekickAI-Mini/index.html)).
 
 ---
 
